@@ -2,7 +2,7 @@
 # Instructions to Download, Unblock, and Run a PowerShell Script
 
 ## Step 1: Download the `.ps1` File and `.crt` File
-1. Download the PowerShell script (`.ps1` file) and the certificate file (`.crt`) from the source.
+1. Download the PowerShell script (`.ps1` file) and the certificate file (`.crt`) from the email sent by your administrator.
    - Save these files to a directory on your machine, such as `C:\Tmp`.
 
    Example:
