@@ -57,6 +57,9 @@ $ mkdir -p docker/gitlab_backup/{data,logs,registry}  # Directory names can be c
 ```
 
 ### 2. Copy the production config/ folder (which has been backed up separately) to `/home/ubuntu/docker/gitlab/`.
+```bash
+aws s3 cp s3://stonecodelabs-infra-backup/latitude-prod/config_backup.zip /home/ubuntu/docker/gitlab/
+```
 
 ### 3. If necessary, update the contents of `/home/ubuntu/docker/gitlab/config/gitlab.rb`, especially the IPs, credentials, ports, and any other relevant configurations.
 
