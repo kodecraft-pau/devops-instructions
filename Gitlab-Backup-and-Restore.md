@@ -3,7 +3,7 @@
 
 ## To Backup GitLab
 
-### 1. Edit the /home/ubuntu/data/gitlab/config/gitlab.rb file and add the following:
+### 1. Edit the `/home/ubuntu/data/gitlab/config/gitlab.rb` file and add the following:
 
 ```ruby
 ### Backup Settings
@@ -56,17 +56,25 @@ $ cd /home/ubuntu
 $ mkdir -p docker/gitlab_backup/{data,logs,registry}  # Directory names can be customized
 ```
 
-### 2. Copy the production config/ folder (which has been backed up separately) to `/home/ubuntu/docker/gitlab/`.
+### 2. Copy the production config/ folder (which has been backed up separately) to `/home/ubuntu/docker/gitlab_backup/`. Then unzip it.
 ```bash
-aws s3 cp s3://stonecodelabs-infra-backup/latitude-prod/config_backup.zip /home/ubuntu/docker/gitlab_backup/tmp/
+$ aws s3 cp s3://stonecodelabs-infra-backup/latitude-prod/config_backup.zip /home/ubuntu/docker/gitlab_backup/
+$ unzip config_backup.zip
+# Enter zip password
+
+# Move the config folder to /home/ubuntu/docker/gitlab_backup/
+$ mv home/ubuntu/data/gitlab/config/ .
+
+# Clean up
+$ rm -rf config_backup.zip home
 ```
 
 ### 3. If necessary, update the contents of `/home/ubuntu/docker/gitlab/config/gitlab.rb`, especially the IPs, credentials, ports, and any other relevant configurations.
 
 ### 4. Create a Docker Compose file:
 ```bash
-cd /home/ubuntu/docker/gitlab_backup
-vim docker-compose.yml
+$ cd /home/ubuntu/docker/gitlab_backup
+$ vim docker-compose.yml
 ```
 
 Then, paste the following:
@@ -76,7 +84,7 @@ services:
   gitlab_backup:  # This name can be customized to avoid conflicts with the original service
     user: root
     image: gitlab/gitlab-ee:17.4.2-ee.0
-    container_name: gitlab
+    container_name: gitlab_backup
     restart: always
     privileged: true  # To ensure Docker-in-Docker (dind) functionality if required
     hostname: '<host ip>'
@@ -90,7 +98,7 @@ services:
       - '<host ip>:9929:9929'
       - '<host ip>:9930:9930'
       - '<host ip>:3424:22'
-      - '<host ip>:6005'  # Port for Container Registry
+      - '6005:6005'  # Port for Container Registry
     volumes:
       - './config:/etc/gitlab'
       - './logs:/var/log/gitlab'
@@ -120,15 +128,16 @@ $ sudo docker exec -t gitlab_backup gitlab-ctl reconfigure
 
 ### 7. Download the backup file from AWS S3 and place it in `/home/ubuntu/gitlab_backup/data/backups`:
 ```bash
-$ sudo aws s3 cp s3://stonecodelabs-gitlab-backup/prod_gitlab_backup.tar /home/ubuntu/docker/gitlab/data/backups/
+$ aws s3 cp s3://stonecodelabs-gitlab-backup/prod_gitlab_backup.tar /home/ubuntu/docker/gitlab_backup/tmp/
+$ sudo mv /home/ubuntu/docker/gitlab_backup/tmp/prod_gitlab_backup.tar /home/ubuntu/docker/gitlab_backup/data/backups/
 ```
 
 ### 8. Access the `gitlab_backup` container to proceed with the restoration process:
 ```bash
-$ sudo docker exec -t gitlab_backup bash
+$ sudo docker exec -it gitlab_backup bash
 $ whoami  # Ensure you are logged in as root
 $ chown git:git /var/opt/gitlab/backups/prod_gitlab_backup.tar
-$ gitlab-backup restore BACKUP=dump
+$ gitlab-backup restore BACKUP=prod
 
 # Confirm the restoration when prompted to replace the existing tables.
 # Type 'yes' since this gitlab_backup container is empty.
